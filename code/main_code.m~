@@ -49,86 +49,28 @@ im_right(imcomplement(mask_right)) = 0;
 [imRight_rect,imMiddleRight_rect] = rectifyStereoImages(im_right,im_middle,stereoParams_MR,...
     'OutputView','full');
 
-%% Face Detection
+%% 3D landmarks from 2D ploints
+[movingreg, p]= registerImages(imRight_rect, imMiddleRight_rect);
+k = stereoParams_MR.CameraParameters1.IntrinsicMatrix';
+wR1 = stereoParams_MR.RotationOfCamera2';
+wt1 = stereoParams_MR.TranslationOfCamera2';
+sigma = stereoParams_MR.MeanReprojectionError;
+[Xpost, Cpost] = ut_3Dlandmarks_from_2Dpoints(p,sigma,k,wRc,wtc);
+Xprior = Xpost; 
+Cprior = Cpost;
+[Xpost, Cpost] = ut_3Dlandmarks_from_2Dpoints(p,sigma,k,wRc,wtc, Xprior, Cprior);
 
-%To detect Face
-FDetect = vision.CascadeObjectDetector;
-
-%Returns Bounding Box values based on number of objects
-BB = step(FDetect,im_right);
-
-figure,
-imshow(im_right); hold on
-for i = 1:size(BB,1)
-    rectangle('Position',BB(i,:),'LineWidth',5,'LineStyle','-','EdgeColor','r');
-end
-title('Face Detection');
-hold off;
-
-%% Segmentating the face
-
-maskRight = faceSegmentation(im_right,'right');
-% maskMiddle = faceSegmentation(imMiddle,'middle');
-% maskLeft = faceSegmentation(imLeft,'left');
-
-%% Stereo Rectification
-
-% Middle + Right Images/Masks rectification
-[imRight_rec,imMiddle_rec] = rectifyStereoImages(im_right,im_middle,...
-stereoParams_MR,'OutputView','full');
-figure, imshowpair(imRight_rec,imMiddle_rec,'montage');
-
-[maskRight_rec,maskMiddle_rec] = rectifyStereoImages(maskRight,maskMiddle, ...
-stereoParams_MR,'OutputView','full');
-figure, imshowpair(maskRight_rec,maskMiddle_rec,'montage');
-
-[m,n,k] = size(imRight_rec); % size of the rectified images
-
-
-% Left + Middle Images/Masks rectification
-[imLeft_rec,imMiddle_rec2] = rectifyStereoImages(im_left,im_middle, ...
-stereoParams1_LM,'OutputView','full');
-figure, imshowpair(imLeft_rec,imMiddle_rec2,'montage');
-
-[maskLeft_rec,maskMiddle_rec2] = rectifyStereoImages(maskLeft,maskMiddle, ...
-stereoParams1_LM,'OutputView','full');
-figure, imshowpair(maskLeft_rec,maskMiddle_rec2,'montage');
-
-[m2,n2,k2] = size(imMiddle_rec2); % size of the rectified images
-
+xmean = mean(Xpost,2);
+CMatrix = cov(Xpost');
+pcol = [0.8 0.3 0.2];
+patchP = patch(pcol);
+Nlong=41; 
+Nlat = 41;
+hg = [];
+figure;
+h = ut_plotcov3(hg,Nlong,Nlat,xmean,Cmatrix,pcol,patchP)
 
 %% Facial (easily recognizable) Features 
-
-faceDetector = vision.CascadeObjectDetector; % Face detector
-
-% Right image
-bboxes = step(faceDetector, im_right);
-% Select face
-faceRight = im_right(bboxes(1,2)-170:bboxes(1,2)+90+bboxes(1,4),bboxes(1,1):bboxes(1,1)+40+bboxes(1,3));
-ftrsRight = detectHarrisFeatures(faceRight); % Detect SURF features
-% Saving the features and coordinates in matrixes
-[featuresRight, pointsRight] = extractFeatures(faceRight, ftrsRight);
-figure,imshow(faceRight), hold on, plot(ftrsRight) % Plot facial features
-
-% Left image
-bboxes = step(faceDetector, im_left);
-% Select face
-faceLeft = im_left(bboxes(1,2)-130:bboxes(1,2)+10+bboxes(1,4),bboxes(1,1)-40:bboxes(1,1)+bboxes(1,3));
-ftrsLeft = detectHarrisFeatures(faceLeft); % Detect SURF features
-% Saving the features and coordinates in matrixes
-[featuresLeft, pointsLeft] = extractFeatures(faceLeft, ftrsLeft);
-figure,imshow(faceLeft), hold on, plot(ftrsLeft) % Plot facial features
-
-% Middle image
-bboxes = step(faceDetector, im_middle);
-% Select face
-faceMiddle = im_middle(bboxes(1,2)-130:bboxes(1,2)+20+bboxes(1,4),bboxes(1,1):bboxes(1,1)+bboxes(1,3)+20);
-ftrsMiddle = detectHarrisFeatures(faceMiddle); % Detect SURF features
-% Saving the features and coordinates in matrixes
-[featuresMiddle, pointsMiddle] = extractFeatures(faceMiddle, ftrsMiddle);
-figure,imshow(faceMiddle), hold on, plot(ftrsMiddle) % Plot facial features
-
-
 xyDIF = abs(featuresMiddle-featuresRight);
 disparity_Fpoints = sqrt(xyDIF(:,1).^2 + xyDIF(:,2).^2);
 

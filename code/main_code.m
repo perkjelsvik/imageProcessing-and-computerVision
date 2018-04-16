@@ -49,6 +49,28 @@ im_right(imcomplement(mask_right)) = 0;
 [imRight_rect,imMiddleRight_rect] = rectifyStereoImages(im_right,im_middle,stereoParams_MR,...
     'OutputView','full');
 
+%% 3D landmarks from 2D ploints
+[movingreg, p]= registerImages(imRight_rect, imMiddleRight_rect);
+p = p';
+k = stereoParams_MR.CameraParameters1.IntrinsicMatrix';
+wR1 = stereoParams_MR.RotationOfCamera2';
+wt1 = stereoParams_MR.TranslationOfCamera2';
+sigma = stereoParams_MR.MeanReprojectionError;
+[Xpost, Cpost] = ut_3Dlandmarks_from_2Dpoints(p,sigma,k,wRc,wtc);
+Xprior = Xpost; 
+Cprior = Cpost;
+[Xpost, Cpost] = ut_3Dlandmarks_from_2Dpoints(p,sigma,k,wRc,wtc, Xprior, Cprior);
+
+xmean = mean(Xpost,2);
+CMatrix = cov(Xpost');
+pcol = [0.8 0.3 0.2];
+patchP = patch(Xpost(1,:),Xpost(2,:),pcol);
+Nlong=41; 
+Nlat = 41;
+hg = [];
+figure;
+h = ut_plotcov3(hg, Nlong,Nlat,xmean,Cmatrix,pcol,patchP); grid on;
+
 %% Facial (easily recognizable) Features 
 xyDIF = abs(featuresMiddle-featuresRight);
 disparity_Fpoints = sqrt(xyDIF(:,1).^2 + xyDIF(:,2).^2);
