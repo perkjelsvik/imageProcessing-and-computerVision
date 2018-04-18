@@ -16,7 +16,6 @@ addpath('test');
 addpath(genpath('functions'));
 
 %% Reading images
-
 images = imageSet('test');
 im_left = im2double(read(images,1));
 im_middle = im2double(read(images,2));
@@ -109,53 +108,70 @@ h = ut_plotcov3(hg, Nlong,Nlat,xmean,CMatrix,pcol,patchP); grid on;
 %}
 
 %% Disparity map
-disparityRange = [270 350];
 %disparityRange = [292-6,344+6];
 %map_MR = disparity(rgb2gray(imLeft_rect2),rgb2gray(imMiddleLeft_rect2), ...
 %    'DisparityRange',[0,256],'ContrastThreshold',0.8);
-h = fspecial('gaussian',50);
-SE = strel('disk',10);
+%h = fspecial('gaussian',50);
+%SE = strel('disk',10);
 
-unreliable_LM = disparity(rgb2gray(imfilter(imclose(imLeft_rect2,SE),h)),...
-    rgb2gray(imfilter(imdilate(imMiddleLeft_rect2,SE),h)) ,'DisparityRange',...
-    disparityRange, 'ContrastThreshold',0.7,'UniquenessThreshold',6,...
-    'DistanceThreshold',15,'BlockSize',9,'method', 'blockmatching');
-unreliable_LM = imclose(unreliable_LM, SE);
-unreliable_LM(imcomplement(rgb2gray(imLeft_rect) > 0)) = 0;
-figure;
-imshow(unreliable_LM,disparityRange);
-colormap(gca,jet); colorbar;
+%unreliable_LM = disparity(rgb2gray(imfilter(imclose(imLeft_rect2,SE),h)),...
+%    rgb2gray(imfilter(imdilate(imMiddleLeft_rect2,SE),h)) ,'DisparityRange',...
+%    disparityRange, 'ContrastThreshold',0.7,'UniquenessThreshold',6,...
+%    'DistanceThreshold',15,'BlockSize',9,'method', 'blockmatching');
+%unreliable_LM = imclose(unreliable_LM, SE);
+%unreliable_LM(imcomplement(rgb2gray(imLeft_rect) > 0)) = 0;
+%figure;
+%imshow(unreliable_LM,disparityRange);
+%colormap(gca,jet); colorbar;
 %%
-h = fspecial('gaussian',50);
-SE = strel('disk',10);
-map_LM = disparity(rgb2gray(imfilter(imclose(imLeft_rect2,SE),h)),...
-    rgb2gray(imfilter(imdilate(imMiddleLeft_rect2,SE),h)),'DisparityRange',...
-    disparityRange, 'ContrastThreshold',0.7,'UniquenessThreshold',6,...
-    'DistanceThreshold',15,'BlockSize',9);
+disparityRange = [276 340];
+map_LM = disparity(rgb2gray(imLeft_rect2),...
+    rgb2gray(imMiddleLeft_rect2),'DisparityRange',...
+    disparityRange, 'ContrastThreshold',0.9,'UniquenessThreshold',5,...
+    'DistanceThreshold',15,'BlockSize',5);
 map_LM(imcomplement(rgb2gray(imLeft_rect) > 0)) = 0;
-%map_LM = imclose(map_LM, SE);
-%map_LM = imfill(map_LM, 'holes');
-%map_LM = imgaussfilt(map_LM,1);
+map_LM = medfilt2(map_LM, [15 15],'symmetric');
+map_LM = imfill(map_LM,'holes');
 figure;
 imshow(map_LM,disparityRange);
 colormap(gca,jet);
 colorbar;
+unreliable_LM = ones(size(map_LM));
+unreliable_LM(find(map_LM~=0)) = 0;
+unreliable_LM(find(map_LM==-realmax('single'))) = 1; 
 %%
-disparityRange = [270 350];
-%map_MR = disparity(rgb2gray(imLeft_rect2),rgb2gray(imMiddleLeft_rect2), ...
-%    'DisparityRange',[0,256],'ContrastThreshold',0.8);
-map_MR = disparity(rgb2gray(imMiddleRight_rect2),rgb2gray(imRight_rect2) ...
-    ,'DisparityRange',disparityRange, 'ContrastThreshold',0.7, ...
-    'UniquenessThreshold',6, 'DistanceThreshold',13,'BlockSize',9);
+disparityRange = [276 340];
+map_MR = disparity(rgb2gray(imMiddleRight_rect2), ...
+    rgb2gray(imRight_rect2), 'DisparityRange',...
+    disparityRange, 'ContrastThreshold',0.9,'UniquenessThreshold',5,...
+    'DistanceThreshold',15,'BlockSize',5);
 map_MR(imcomplement(rgb2gray(imMiddleRight_rect) > 0)) = 0;
+map_MR = medfilt2(map_MR, [15 15],'symmetric');
+map_MR = imfill(map_MR,'holes');
 figure;
 imshow(map_MR,disparityRange);
 colormap(gca,jet);
 colorbar;
+unreliable_MR = ones(size(map_MR));
+unreliable_MR(find(map_MR~=0)) = 0;
+unreliable_MR(find(map_MR==-realmax('single'))) = 1; 
 
 %% 3D point cloud
 xyzPoints_LM = reconstructScene(map_LM,stereoParams_LM);
 xyzPoints_MR = reconstructScene(map_MR,stereoParams_MR);
+pc_LM = pointCloud(xyzPoints_LM);
 
-%TR_LM = create_3D_mesh(map_LM, xyzPoints_LM, unreliable_LM, imMiddleLeft_rect);
-%TR_LM = create_3D_mesh(map_MR, xyzPoints_MR, unreliable_MR);
+pc_MR = pointCloud(xyzPoints_MR);
+[tform,~,rmse]= pcregrigid(pc_MR, pc_LM, 'Extrapolate',true);
+%pc_MR = pctransform(pc_MR,tform);
+pc = pcmerge(pc_LM, pctransform(pc_MR,tform), 0.61);
+figure;
+pcshow(pc);
+
+TR_LM = create_3D_mesh(map_LM, xyzPoints_LM, unreliable_LM, imLeft_rect);
+TR_MR = create_3D_mesh(map_MR, xyzPoints_MR, unreliable_MR, imMiddleRight_rect);
+%TR = create_3D_mesh(map_MR, pc.Location, unreliable_MR, imMiddleRight_rect);
+%TR = create_3D_mesh(map_LM, pc.Location(502:end-503,:), unreliable_LM, imLeft_rect(1:3:end,1:3:end,:));
+
+
+%% 

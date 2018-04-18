@@ -5,11 +5,13 @@ res = 2; % resolution of mesh
 [nI,mI] = meshgrid(1:res:N,1:res:M); % create a 2D meshgrid of pixels, thus defining a resolution grid
 TRI = delaunay(nI(:),mI(:)); % create a triangle connectivity list
 indI = sub2ind([M,N],mI(:),nI(:)); % cast grid points to linear indices
+
 %% linearize the arrays and adapt to chosen resolution
 pcl = reshape(pc,N*M,3); % reshape to (N*M)x3
 J1l = reshape(J1,N*M,3); % reshape to (N*M)x3
 pcl = pcl(indI,:); % select 3D points that are on resolution grid
 J1l = J1l(indI,:); % select pixels that are on the resolution grid
+
 %% remove the unreliable points and the associated triangles
 ind_unreliable = find(unreliable(indI));% get the linear indices of unreliable 3D points
 imem = ismember(TRI(:),ind_unreliable); % find indices of references to unreliable points
@@ -22,9 +24,11 @@ map2used = cumsum(used); % conversion table from indices of old vertices to the 
 pcl = pcl(iused,:); % remove the unused vertices
 J1l = J1l(iused,:);
 TRI = map2used(TRI); % update the ind's of vertices
+
 %% create the 3D mesh
 %pcl(~isfinite(pcl)) = 0;
 TR = triangulation(TRI,double(pcl)); % create the object
+
 %% visualize
 figure;
 TM = trimesh(TR); % plot the mesh
