@@ -98,24 +98,16 @@ im_right_masked(imcomplement(mask_right)) = 0;
 [map_MR, unreliable_MR] =  disparityMapAndUnreliable(imMiddleRight_rect_full, ...
 imRight_rect_full, imMiddleRight_rect, 12 +subNum*10);
 
-%% 3D point clouds
+%% 3D point cloud
 % Create point clouds for LM and MR
 xyzPoints_LM = reconstructScene(map_LM,stereoParams_LM);
 xyzPoints_MR = reconstructScene(map_MR,stereoParams_MR);
 
 % Complete PointCloud Registration Algorithm
-%{
-    Denoise(LM)     &   Denoise(MR)     - pcdenoise
-    Downsample(LM)  &   Denoise(MR)     - pcdownsample
-    Rigid Transformation LM & MR        - pcregrigid
-        Match Points between LM & MR
-        Remove incorrect matches (Outlier filter)
-        Recover rotation and translation (minimize error)
-        Check if algorithm stops
-    Align LM and MR                     - pctransform
-    Merge LM and MR                     - pcmerge
-%}
-
+%   Denoise(LM)     &   Denoise(MR)
+%   Downsample(LM)  &   Denoise(MR)
+%   Rigid Transformation LM & MR
+     
 pc_LM = pointCloud(xyzPoints_LM);
 pc_LM = pcdenoise(pc_LM);
 pc_LM = pcdownsample(pc_LM, 'nonuniformGridSample', 15);
@@ -128,8 +120,5 @@ figure;
 pcshow(pc);
 
 %% Create 3D meshes from point clouds
-% Function based on UT syllabi
-TR_LM = create_3D_mesh(map_LM, xyzPoints_LM, ...
-    unreliable_LM, imLeft_rect);
-TR_MR = create_3D_mesh(map_MR, xyzPoints_MR, ...
-    unreliable_MR, imMiddleRight_rect);
+TR_LM = create_3D_mesh(map_LM, xyzPoints_LM, unreliable_LM, imLeft_rect);
+TR_MR = create_3D_mesh(map_MR, xyzPoints_MR, unreliable_MR, imMiddleRight_rect);
