@@ -19,7 +19,7 @@ addpath(genpath('functions'));
 % MR represent Middle -> Right
 
 %% Reading images
-images = imageSet('test'); % Crate a indexed imageSet of the subject
+images = imageSet('test'); % Create a indexed imageSet of the subject
 subNum = 0; %0, 1, 2 represents subject 1, 2, 3
 im_left = im2double(read(images,1+3*subNum));
 im_middle = im2double(read(images,2+3*subNum));
