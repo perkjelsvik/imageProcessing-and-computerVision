@@ -5,7 +5,6 @@
 
 % Authors: Per Arne s2049201 & Tiago Machado s2041596
 
-
 clear variables % Clear variables in workspace
 close all       % Close all images/graphs/plots
 clc             % Clear Command Window
