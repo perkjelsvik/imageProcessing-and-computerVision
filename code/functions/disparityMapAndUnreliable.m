@@ -46,7 +46,7 @@ switch subNumPair
         disparityMap = medfilt2(disparityMap, [100 100], 'symmetric');
     
     case 31 % Subject 3, LM image pair
-        disparityRange = [430-16*7 430]; % IS THIS RIGHT??
+        disparityRange = [430-16*7 430];
         disparityMap = disparity(im_left,im_right,'DisparityRange',...
             disparityRange, 'ContrastThreshold',1, ...
             'UniquenessThreshold',5,'DistanceThreshold',100,'BlockSize',15);

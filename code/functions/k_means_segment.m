@@ -8,12 +8,12 @@ function [segmentedImage] = k_means_segment(im)
 lab_face = rgb2lab(im);  % Convert image to L*a*b* color space
 
 %% Classify the Colors in 'a*b*' Space Using K-Means Clustering
-ab = lab_face(:,:,2:3); % Extract tha a*b* values
+ab = lab_face(:,:,2:3);  % Extract tha a*b* values
 nrows = size(ab,1);
 ncols = size(ab,2);
 ab = reshape(ab,nrows*ncols,2);
-nColors = 3;    % Skin colour, hair colour, background colour
-n = 3;          % Repeat clustering n times to avoid local minima
+nColors = 3;             % Skin colour, hair colour, background colour
+n = 3;                   % Repeat clustering n times to avoid local minima
 
 % Run k-means clustering algorithm
 [cluster_idx, cluster_center]= kmeans(ab,nColors,'Distance', ...
@@ -41,7 +41,7 @@ mean_cluster_value = mean(cluster_center,2);
 [~, idx] = sort(mean_cluster_value);
 skin_cluster_num = idx(3);
 
-L = lab_face(:,:,1); % Extract the L* values
+L = lab_face(:,:,1);                      % Extract the L* values
 skin_idx = find(pixel_labels == skin_cluster_num);
 L_skin = L(skin_idx);
 is_light_skin = imbinarize(rescale(L_skin));
@@ -51,9 +51,9 @@ face_labels(skin_idx(is_light_skin==false)) = 1;
 face_labels = repmat(face_labels,[1 1 3]);
 
 face = im;
-face(face_labels ~= 1) = 0; % Enhancing face
+face(face_labels ~= 1) = 0;               % Enhancing face
 face_masked = face | segmented_images{3}; % Make binary mask 
-face_masked = face_masked(:,:,1); % Resize to two-dimensional
+face_masked = face_masked(:,:,1);         % Resize to two-dimensional
 
 % Perform morphological operations to isolate the face
 % The operations performed here were found by trial-and-error

@@ -91,6 +91,7 @@ im_right_masked(imcomplement(mask_right)) = 0;
 % used further. 
 [movingReg_LM]= registerImages_LM(imLeft_rect, imMiddleLeft_rect);
 [movingReg_MR]= registerImages_MR(imMiddleRight_rect,imRight_rect);
+
 %% Disparity map
 % Create disparity map for the two image pairs
 [map_LM, unreliable_LM] =  disparityMapAndUnreliable(imLeft_rect_full, ...
